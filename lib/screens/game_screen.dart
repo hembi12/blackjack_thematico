@@ -4,6 +4,8 @@ import '../widgets/dealer_hand.dart';
 import '../widgets/player_hand.dart';
 import '../widgets/action_buttons.dart';
 import '../widgets/game_message.dart';
+import '../widgets/bet_controls.dart';
+import '../widgets/chips_display.dart';
 
 class GameScreen extends StatefulWidget {
   @override
@@ -15,6 +17,9 @@ class _GameScreenState extends State<GameScreen> {
   List<CardModel> playerHand = [];
   List<CardModel> dealerHand = [];
   String gameMessage = "";
+
+  int playerChips = 100; // Fichas iniciales del jugador
+  int currentBet = 10;   // Apuesta inicial
 
   @override
   void initState() {
@@ -41,10 +46,17 @@ class _GameScreenState extends State<GameScreen> {
 
   void startGame() {
     setState(() {
+      if (playerChips < currentBet) {
+        gameMessage = "💔 No tienes suficientes fichas.";
+        return;
+      }
+
       initializeDeck();
       deck.shuffle();
       playerHand = [deck.removeLast(), deck.removeLast()];
       dealerHand = [deck.removeLast(), deck.removeLast()];
+
+      playerChips -= currentBet; // Deduce la apuesta inicial
       gameMessage = "";
     });
   }
@@ -68,7 +80,7 @@ class _GameScreenState extends State<GameScreen> {
       playerHand.add(deck.removeLast());
       int playerScore = calculateScore(playerHand);
       if (playerScore > 21) {
-        gameMessage = "💥 ¡Te pasaste! El crupier gana.";
+        gameMessage = "💥 ¡Te pasaste! El crupier gana ${currentBet}.";
       }
     });
   }
@@ -82,10 +94,12 @@ class _GameScreenState extends State<GameScreen> {
       int dealerScore = calculateScore(dealerHand);
 
       if (dealerScore > 21 || playerScore > dealerScore) {
-        gameMessage = "🎉 ¡Ganaste!";
+        playerChips += currentBet * 2; // Gana el doble de la apuesta
+        gameMessage = "🎉 ¡Ganaste! Ganaste ${currentBet * 2} fichas.";
       } else if (playerScore < dealerScore) {
-        gameMessage = "💔 Perdiste. El crupier gana.";
+        gameMessage = "💔 Perdiste. El crupier gana ${currentBet}.";
       } else {
+        playerChips += currentBet; // Recupera la apuesta
         gameMessage = "🤝 Es un empate.";
       }
     });
@@ -112,10 +126,26 @@ class _GameScreenState extends State<GameScreen> {
         false;
   }
 
+  void increaseBet() {
+    setState(() {
+      if (currentBet + 10 <= playerChips) {
+        currentBet += 10;
+      }
+    });
+  }
+
+  void decreaseBet() {
+    setState(() {
+      if (currentBet > 10) {
+        currentBet -= 10;
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: _showExitConfirmation, // Captura el botón de retroceso físico
+      onWillPop: _showExitConfirmation,
       child: Scaffold(
         appBar: AppBar(
           title: Text("Blackjack Temático"),
@@ -124,7 +154,7 @@ class _GameScreenState extends State<GameScreen> {
             onPressed: () async {
               bool shouldExit = await _showExitConfirmation();
               if (shouldExit) {
-                Navigator.of(context).pop(); // Regresar a la pantalla anterior
+                Navigator.of(context).pop();
               }
             },
           ),
@@ -143,6 +173,15 @@ class _GameScreenState extends State<GameScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              ChipsDisplay(playerChips: playerChips),
+              SizedBox(height: 10),
+              BetControls(
+                currentBet: currentBet,
+                playerChips: playerChips,
+                onIncreaseBet: increaseBet,
+                onDecreaseBet: decreaseBet,
+              ),
+              SizedBox(height: 20),
               DealerHand(
                 dealerHand: dealerHand,
                 dealerScore: calculateScore(dealerHand),
@@ -153,7 +192,9 @@ class _GameScreenState extends State<GameScreen> {
                 playerScore: calculateScore(playerHand),
               ),
               SizedBox(height: 20),
-              GameMessage(message: gameMessage),
+              Center(
+                child: GameMessage(message: gameMessage),
+              ),
               SizedBox(height: 40),
               ActionButtons(
                 onHit: hit,

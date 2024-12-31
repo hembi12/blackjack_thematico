@@ -9,19 +9,21 @@ class GameMessage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (message.isEmpty) return SizedBox.shrink();
-    return AnimatedTextKit(
-      animatedTexts: [
-        TypewriterAnimatedText(
-          message,
-          textStyle: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.yellow,
+    return Center(
+      child: AnimatedTextKit(
+        animatedTexts: [
+          TypewriterAnimatedText(
+            message,
+            textStyle: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.yellow,
+            ),
+            speed: Duration(milliseconds: 100),
           ),
-          speed: Duration(milliseconds: 100),
-        ),
-      ],
-      isRepeatingAnimation: false,
+        ],
+        isRepeatingAnimation: false,
+      ),
     );
   }
 }
